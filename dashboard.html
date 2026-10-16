@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ETLab - Dashboard</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:13px;background:#f0f0f0;display:flex;flex-direction:column;min-height:100vh;}
+
+    /* ===== TOP NAV ===== */
+    .topnav{background:linear-gradient(to bottom, #383838 0%, #242424 100%);height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;position:fixed;top:0;left:0;right:0;z-index:1000;border-bottom:1px solid #1a1a1a;}
+    .topnav-left{display:flex;align-items:center;gap:18px;}
+    .topnav-logo{height:20px;width:auto;display:block;object-fit:contain;}
+    .topnav-title{color:#c8c8c8;font-size:11px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.3px;}
+    .topnav-right{display:flex;align-items:center;gap:3px;}
+    .nav-btn{background:linear-gradient(to bottom, #444444 0%, #303030 100%);border:1px solid #202020;border-radius:2px;color:#cccccc;font-size:11px;padding:2px 7px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);line-height:1;height:24px;}
+    .nav-btn:hover{background:linear-gradient(to bottom, #505050 0%, #383838 100%);color:#ffffff;}
+    .nav-badge-red{background:#d9534f;color:#ffffff;font-size:9px;font-weight:bold;padding:1px 4px;border-radius:2px;margin:0 1px;line-height:12px;}
+    .nav-btn .fa-caret-down{font-size:9px;color:#aaa;margin-left:2px;}
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar{position:fixed;top:32px;left:0;width:82px;bottom:0;background:#444444;display:flex;flex-direction:column;z-index:999;overflow-y:auto;overflow-x:hidden;}
+    .sidebar-item{width:100%;height:35px;display:flex;align-items:center;padding:0 4px 0 6px;color:#cccccc;font-size:9.5px;font-family:Arial,Helvetica,sans-serif;letter-spacing:-0.1px;cursor:pointer;border-bottom:1px solid #363636;gap:5px;text-decoration:none;white-space:nowrap;background:#444444;}
+    .sidebar-item:hover{background:#383838;color:#fff;}
+    .sidebar-item.active{background:#333333;color:#ffffff;}
+    .sidebar-item i{font-size:11px;width:12px;text-align:center;color:#cccccc;flex-shrink:0;}
+    .sidebar-item.active i{color:#ffffff;}
+    .sidebar-item span{line-height:1;}
+
+    /* ===== MAIN WRAPPER ===== */
+    .main-wrapper{margin-left:82px;margin-top:32px;display:flex;flex:1;padding:8px;gap:8px;}
+
+    /* ===== CONTENT AREA ===== */
+    .content-area{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;}
+
+    /* Breadcrumb */
+    .breadcrumb{font-size:12px;color:#555;padding:4px 0;}
+    .breadcrumb a{color:#337ab7;text-decoration:none;}
+    .breadcrumb a:hover{text-decoration:underline;}
+
+    /* Alert notice */
+    .alert-notice{background:#dff0d8;border:1px solid #d6e9c6;color:#3c763d;padding:8px 12px;font-size:12px;display:flex;align-items:center;justify-content:space-between;}
+    .alert-notice a{color:#3c763d;font-weight:700;text-decoration:underline;}
+    .alert-close{cursor:pointer;font-size:16px;color:#555;background:none;border:none;}
+
+    /* Vision/Mission box */
+    .info-box{background:#fff;border:1px solid #d2d6de;border-radius:3px;box-shadow:0 1px 1px rgba(0,0,0,0.05);padding:14px 18px;}
+    .info-box .vision-title{text-align:center;font-size:14px;font-weight:700;color:#333;margin-bottom:6px;}
+    .info-box .vision-text{text-align:center;font-size:12px;color:#555;margin-bottom:12px;line-height:1.5;}
+    .info-box .mission-title{text-align:center;font-size:14px;font-weight:700;color:#333;margin-bottom:8px;}
+    .info-box .mission-list{padding-left:18px;}
+    .info-box .mission-list li{font-size:12px;color:#555;margin-bottom:5px;line-height:1.4;}
+    .acct-notice{background:#f2dede;border:1px solid #ebccd1;border-radius:3px;color:#a94442;padding:7px 12px;font-size:12px;margin-top:8px;}
+
+    /* Icons grid - Shadowed boxes matching reference */
+    .grid-box{background:transparent;border:none;padding:0;margin-top:12px;}
+    .icon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:transparent;}
+    .icon-cell{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:12px 6px 10px;
+      cursor:pointer;
+      min-height:84px;
+      text-align:center;
+      background:#ffffff;
+      border:1px solid #d2d6de;
+      border-radius:3px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.18);
+      transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      color:#222222;
+      text-decoration:none;
+    }
+    .icon-cell:hover{
+      background:#ffffff;
+      border-color:#b4c0cc;
+      box-shadow:0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.22);
+      transform:translateY(-1px);
+      color:#000000;
+    }
+    .icon-cell img{height:34px;width:auto;max-width:44px;object-fit:contain;margin-bottom:6px;display:block;}
+    .icon-cell .broken-img-box{width:36px;height:22px;border:1px solid #ccc;background:#fff;display:inline-flex;align-items:center;justify-content:center;margin-bottom:6px;}
+    .icon-cell span{font-size:11px;color:#222222;line-height:1.25;font-weight:500;}
+    .icon-cell:hover span{color:#000000;}
+
+    /* ===== RIGHT PANEL ===== */
+    .right-panel{width:380px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;}
+
+    /* Panel Card (Calendar & Upcoming Events) */
+    .panel-card{background:#fff;border:1px solid #d2d6de;border-radius:3px;box-shadow:0 1px 1px rgba(0,0,0,0.05);overflow:hidden;}
+    .panel-card-header{
+      background:linear-gradient(to bottom, #fcfcfc 0%, #ececec 100%);
+      border-bottom:1px solid #d2d6de;
+      padding:7px 12px;
+      font-size:12px;
+      font-weight:600;
+      color:#555;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .panel-card-header i.fa-bars{font-size:11px;color:#666;}
+    .panel-card-body{padding:10px 12px;}
+
+    /* Calendar Month Navigation Bar */
+    .calendar-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:4px 8px;
+      background:linear-gradient(to bottom, #e4e4e4 0%, #d4d4d4 100%);
+      border:1px solid #c2c2c2;
+      border-radius:3px;
+      font-size:11px;
+      font-weight:700;
+      color:#444;
+      margin-bottom:8px;
+    }
+    .cal-arrow{
+      cursor:pointer;
+      background:none;
+      border:none;
+      font-size:10px;
+      color:#333;
+      padding:2px 4px;
+      line-height:1;
+      display:flex;
+      align-items:center;
+    }
+    .cal-arrow:hover{color:#000;}
+
+    /* Calendar Days Header Row */
+    .calendar-weekdays{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      gap:4px;
+      text-align:center;
+      font-size:11px;
+      color:#666;
+      font-weight:600;
+      margin-bottom:5px;
+    }
+    .calendar-weekdays div{padding:2px 0;}
+
+    /* Calendar Days Grid */
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7, 1fr);
+      gap:4px;
+    }
+    .cal-cell{
+      height:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      border-radius:2px;
+      background:#fdfdfd;
+      border:1px solid #e0e0e0;
+      color:#555;
+      cursor:pointer;
+      user-select:none;
+    }
+    .cal-cell.empty{
+      background:transparent;
+      border:1px solid transparent;
+      cursor:default;
+    }
+    .cal-cell.cell-blue{
+      background:#0022cc;
+      border-color:#001ebb;
+      color:#ffffff;
+      font-weight:700;
+    }
+    .cal-cell.cell-orange{
+      background:#f58220;
+      border-color:#e07212;
+      color:#ffffff;
+      font-weight:700;
+    }
+    .cal-cell:not(.empty):hover{
+      filter:brightness(0.96);
+    }
+    .cal-cell.cell-blue:hover{
+      background:#001ecc;
+    }
+
+    /* Upcoming Events */
+    .event-item{
+      padding:9px 0;
+      border-bottom:1px solid #ededed;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .event-item:last-child{border-bottom:none;padding-bottom:2px;}
+    .event-date-badge{
+      width:38px;
+      height:38px;
+      background:#fafafa;
+      border:1px solid #dcdcdc;
+      border-radius:3px;
+      box-shadow:0 1px 2px rgba(0,0,0,0.03);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .event-date-badge .eday{
+      font-size:8px;
+      font-weight:700;
+      color:#0022cc;
+      text-transform:uppercase;
+      line-height:1;
+    }
+    .event-date-badge .enum{
+      font-size:15px;
+      font-weight:700;
+      color:#333;
+      line-height:1.1;
+      margin-top:2px;
+    }
+    .event-info{flex:1;}
+    .event-info .etitle{
+      font-size:11px;
+      font-weight:700;
+      color:#333;
+      line-height:1.3;
+    }
+    .event-info .elocation{
+      font-size:10px;
+      color:#777;
+      display:flex;
+      align-items:center;
+      gap:4px;
+      margin-top:3px;
+      font-weight:600;
+    }
+    .event-info .elocation i.fa-map-marker{
+      font-size:11px;
+      color:#555;
+    }
+
+    /* ===== FOOTER ===== */
+    .page-footer{background:#fff;border-top:1px solid #ddd;padding:6px 12px;font-size:11px;color:#888;display:flex;justify-content:space-between;margin-left:82px;}
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="topnav-left">
+    <img src="etlab_logo.png" alt="etlab" class="topnav-logo"/>
+    <span class="topnav-title">CHRIST COLLEGE OF ENGINEERING (AUTONOMOUS)</span>
+  </div>
+  <div class="topnav-right">
+    <a href="#" class="nav-btn"><i class="fa fa-user"></i> <span>user</span> <i class="fa fa-caret-down"></i></a>
+    <a href="#" class="nav-btn"><i class="fa fa-envelope"></i> <span>Messages</span> <span class="nav-badge-red">0</span> <i class="fa fa-caret-down"></i></a>
+    <a href="login.html" class="nav-btn"><i class="fa fa-share" style="transform:scaleX(-1);"></i> <span>Logout</span></a>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a class="sidebar-item active" href="#">
+    <i class="fa fa-home"></i>
+    <span>Dashboard</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-bars"></i>
+    <span>Attendance</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-pencil-square-o"></i>
+    <span>Results</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th-large"></i>
+    <span>TimeTable</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>Assignments</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>Materials</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>User Manual</span>
+  </a>
+</div>
+
+<!-- MAIN WRAPPER -->
+<div class="main-wrapper">
+
+  <!-- CONTENT AREA -->
+  <div class="content-area">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="#">&#127968; Home</a> &gt; Dashboard
+    </div>
+
+    <!-- Alert Notice -->
+    <div class="alert-notice" id="alertNotice">
+      <span>Note: New assignment results are published <a href="#">View Results</a></span>
+      <button class="alert-close" onclick="document.getElementById('alertNotice').style.display='none'">&#10005;</button>
+    </div>
+
+    <!-- Vision / Mission -->
+    <div class="info-box">
+      <div class="vision-title">Vision of the College</div>
+      <div class="vision-text">To be a premier technical institution that nurtures professionally competent and socially responsible engineers through quality education, training and research.</div>
+      <div class="mission-title">Mission of the College</div>
+      <ul class="mission-list">
+        <li><strong>Mission 1:</strong> Implement state-of-the-art teaching-learning practices with qualified faculty and supportive infrastructure to impart knowledge in modern technologies.</li>
+        <li><strong>Mission 2:</strong> Create a quality education system that encourages faculty and students to involve in meaningful research for the benefit of society.</li>
+        <li><strong>Mission 3:</strong> Inculcate leadership qualities, ethical values and foster the professionalism with spirit of innovation and lifelong learning.</li>
+      </ul>
+    </div>
+
+    <!-- Accounts Notice -->
+    <div class="acct-notice">
+      Academic Fees, Due, Transport, and Hostel information is accessible inside the Accounts menu.
+    </div>
+
+    <!-- ICON GRID -->
+    <div class="grid-box">
+      <div class="icon-grid">
+        <div class="icon-cell"><img src="icons/profile.png" alt="My Profile"/><span>My Profile</span></div>
+        <div class="icon-cell"><img src="icons/analysis.png" alt="Academic Analysis"/><span>Academic Analysis</span></div>
+        <div class="icon-cell"><img src="icons/results.png" alt="Results"/><span>Results</span></div>
+        <div class="icon-cell"><img src="icons/activity.png" alt="Activity"/><span>Activity</span></div>
+
+        <div class="icon-cell"><img src="icons/assignment.png" alt="Assignments"/><span>Assignments</span></div>
+        <div class="icon-cell"><img src="icons/assignment.png" alt="Self Studies"/><span>Self Studies</span></div>
+        <div class="icon-cell"><img src="icons/attendance.png" alt="Attendance"/><span>Attendance</span></div>
+        <div class="icon-cell"><img src="icons/examfee.png" alt="Accounts"/><span>Accounts</span></div>
+
+        <div class="icon-cell"><img src="icons/videolecture.png" alt="Centralized Info"/><span>Centralized Info</span></div>
+        <div class="icon-cell"><img src="icons/cptreg.png" alt="Certificate / Scholarship Request"/><span>Certificate / Scholarship Request</span></div>
+        <div class="icon-cell"><img src="icons/examregistration.png" alt="Challenge Courses"/><span>Challenge Courses</span></div>
+        <div class="icon-cell"><img src="icons/events.png" alt="College Calendar"/><span>College Calendar</span></div>
+
+        <div class="icon-cell"><img src="icons/circular.png" alt="Circulars"/><span>Circulars</span></div>
+        <div class="icon-cell"><img src="icons/assignment.png" alt="Class Projects"/><span>Class Projects</span></div>
+        <div class="icon-cell"><img src="icons/members.png" alt="My Clubs"/><span>My Clubs</span></div>
+        <div class="icon-cell"><img src="icons/vision.png" alt="Department Vision"/><span>Department Vision</span></div>
+
+        <div class="icon-cell"><img src="icons/mission.png" alt="Department Mission"/><span>Department Mission</span></div>
+        <div class="icon-cell"><img src="icons/events.png" alt="Apply Duty Leave"/><span>Apply Duty Leave</span></div>
+        <div class="icon-cell"><img src="icons/download (1).png" alt="Downloads"/><span>Downloads</span></div>
+        <div class="icon-cell"><img src="icons/availability.png" alt="Exam Schedule"/><span>Exam Schedule</span></div>
+
+        <div class="icon-cell"><img src="icons/slow leaners.png" alt="Exam Seating"/><span>Exam Seating</span></div>
+        <div class="icon-cell"><img src="icons/exam.png" alt="Exam/Quiz"/><span>Exam/Quiz</span></div>
+        <div class="icon-cell"><img src="icons/grievancemanagement.png" alt="Grievance"/><span>Grievance</span></div>
+        <a href="gatepass.html" class="icon-cell" style="text-decoration:none;"><img src="icons/gatepass.png" alt="Gate Pass"/><span>Gate Pass</span></a>
+
+        <div class="icon-cell"><img src="icons/assignment.png" alt="Homeworks"/><span>Homeworks</span></div>
+        <div class="icon-cell"><img src="icons/ballot-box.png" alt="Election"/><span>Election</span></div>
+        <div class="icon-cell"><div class="broken-img-box"><i class="fa fa-picture-o" style="color:#8bb;font-size:13px;"></i></div><span>Internship</span></div>
+        <div class="icon-cell"><img src="icons/labdashboard.png" alt="Laboratory"/><span>Laboratory</span></div>
+
+        <div class="icon-cell"><img src="icons/livetv.png" alt="Live"/><span>Live</span></div>
+        <div class="icon-cell"><img src="icons/mooc.png" alt="MOOC Registration"/><span>MOOC Registration</span></div>
+        <div class="icon-cell"><img src="icons/exam.png" alt="Module Test"/><span>Module Test</span></div>
+        <div class="icon-cell"><img src="icons/videolecture.png" alt="Online Video Class"/><span>Online Video Class</span></div>
+
+        <div class="icon-cell"><img src="icons/placement.png" alt="Placements"/><span>Placements</span></div>
+        <div class="icon-cell"><div class="broken-img-box"><i class="fa fa-picture-o" style="color:#8bb;font-size:13px;"></i></div><span>Program Outcomes</span></div>
+        <div class="icon-cell"><img src="icons/question.png" alt="Question Bank"/><span>Question Bank</span></div>
+        <div class="icon-cell"><img src="icons/remark.jpg" alt="Remarks"/><span>Remarks</span></div>
+
+        <div class="icon-cell"><img src="icons/registration.png" alt="Semester Registration"/><span>Semester Registration</span></div>
+        <div class="icon-cell"><img src="icons/exam.png" alt="Series Exam"/><span>Series Exam</span></div>
+        <div class="icon-cell"><img src="icons/labdashboard.png" alt="Project"/><span>Project</span></div>
+        <div class="icon-cell"><img src="icons/studymaterial.png" alt="Study Materials"/><span>Study Materials</span></div>
+
+        <div class="icon-cell"><img src="icons/documents.png" alt="Subject"/><span>Subject</span></div>
+        <div class="icon-cell"><img src="icons/registration.png" alt="Subject Registration"/><span>Subject Registration</span></div>
+        <div class="icon-cell"><img src="icons/survey.png" alt="Survey"/><span>Survey</span></div>
+        <div class="icon-cell"><img src="icons/staff.png" alt="Teacher"/><span>Teacher</span></div>
+
+        <div class="icon-cell"><img src="icons/timetable.png" alt="Timetable"/><span>Timetable</span></div>
+        <div class="icon-cell"><img src="icons/assignment.png" alt="Tutorials"/><span>Tutorials</span></div>
+        <div class="icon-cell"><img src="icons/examregistration.png" alt="End Semester Examination"/><span>End Semester Examination</span></div>
+        <div class="icon-cell"><img src="icons/videolecture.png" alt="Video Lectures"/><span>Video Lectures</span></div>
+
+        <div class="icon-cell"><img src="icons/wallet.png" alt="Wallet"/><span>Wallet</span></div>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- Calendar -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <i class="fa fa-bars"></i>
+        <span>Calendar</span>
+      </div>
+      <div class="panel-card-body">
+        <div class="calendar-nav">
+          <button class="cal-arrow" title="Previous Month">&#9664;</button>
+          <span>October 2026</span>
+          <button class="cal-arrow" title="Next Month">&#9654;</button>
+        </div>
+        <div class="calendar-weekdays">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+        </div>
+        <div class="calendar-grid">
+          <!-- Row 1: Thursday is 1 -->
+          <div class="cal-cell empty"></div>
+          <div class="cal-cell empty"></div>
+          <div class="cal-cell empty"></div>
+          <div class="cal-cell empty"></div>
+          <div class="cal-cell cell-blue">1</div>
+          <div class="cal-cell cell-orange">2</div>
+          <div class="cal-cell cell-blue">3</div>
+
+          <!-- Row 2 -->
+          <div class="cal-cell">4</div>
+          <div class="cal-cell cell-blue">5</div>
+          <div class="cal-cell cell-blue">6</div>
+          <div class="cal-cell cell-blue">7</div>
+          <div class="cal-cell cell-blue">8</div>
+          <div class="cal-cell">9</div>
+          <div class="cal-cell cell-blue">10</div>
+
+          <!-- Row 3 -->
+          <div class="cal-cell">11</div>
+          <div class="cal-cell">12</div>
+          <div class="cal-cell cell-blue">13</div>
+          <div class="cal-cell">14</div>
+          <div class="cal-cell cell-blue">15</div>
+          <div class="cal-cell">16</div>
+          <div class="cal-cell">17</div>
+
+          <!-- Row 4 -->
+          <div class="cal-cell">18</div>
+          <div class="cal-cell">19</div>
+          <div class="cal-cell">20</div>
+          <div class="cal-cell">21</div>
+          <div class="cal-cell">22</div>
+          <div class="cal-cell">23</div>
+          <div class="cal-cell">24</div>
+
+          <!-- Row 5 -->
+          <div class="cal-cell">25</div>
+          <div class="cal-cell">26</div>
+          <div class="cal-cell">27</div>
+          <div class="cal-cell">28</div>
+          <div class="cal-cell">29</div>
+          <div class="cal-cell">30</div>
+          <div class="cal-cell cell-blue">31</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <i class="fa fa-bars"></i>
+        <span>Upcoming Events</span>
+      </div>
+      <div class="panel-card-body" style="padding-top:4px; padding-bottom:6px;">
+        <div class="event-item">
+          <div class="event-date-badge">
+            <span class="eday">OCT</span>
+            <span class="enum">14</span>
+          </div>
+          <div class="event-info">
+            <div class="etitle">HOD PRESENTATION</div>
+            <div class="elocation"><i class="fa fa-map-marker"></i> BOARD ROOM</div>
+          </div>
+        </div>
+        <div class="event-item">
+          <div class="event-date-badge">
+            <span class="eday">OCT</span>
+            <span class="enum">13</span>
+          </div>
+          <div class="event-info">
+            <div class="etitle">CONTINUOUS EVALUATION TEST 1</div>
+            <div class="elocation"><i class="fa fa-map-marker"></i> CLASSROOM</div>
+          </div>
+        </div>
+        <div class="event-item">
+          <div class="event-date-badge">
+            <span class="eday">OCT</span>
+            <span class="enum">13</span>
+          </div>
+          <div class="event-info">
+            <div class="etitle">CET 3</div>
+            <div class="elocation"><i class="fa fa-map-marker"></i> CLASSROOM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end right-panel -->
+
+</div><!-- end main-wrapper -->
+
+<!-- PAGE FOOTER -->
+<div class="page-footer">
+  <span>Page Generated in 1.18309 seconds</span>
+  <span>&copy; 2026 Etuwa Concepts, All rights reserved.</span>
+</div>
+
+</body>
+</html>

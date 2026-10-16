@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>etlab | Gate Pass Request</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+  <!-- Firebase SDKs (Compat version) & Configuration -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:12px;background:#3f3f3f;display:flex;flex-direction:column;min-height:100vh;}
+
+    /* ===== TOP NAV ===== */
+    .topnav{background:linear-gradient(to bottom, #383838 0%, #242424 100%);height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;position:fixed;top:0;left:0;right:0;z-index:1000;border-bottom:1px solid #1a1a1a;}
+    .topnav-left{display:flex;align-items:center;gap:18px;}
+    .topnav-logo{height:20px;width:auto;display:block;object-fit:contain;cursor:pointer;}
+    .topnav-title{color:#c8c8c8;font-size:11px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.3px;}
+    .topnav-right{display:flex;align-items:center;gap:3px;}
+    .nav-btn{background:linear-gradient(to bottom, #444444 0%, #303030 100%);border:1px solid #202020;border-radius:2px;color:#cccccc;font-size:11px;padding:2px 7px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);line-height:1;height:24px;}
+    .nav-btn:hover{background:linear-gradient(to bottom, #505050 0%, #383838 100%);color:#ffffff;}
+    .nav-badge-red{background:#d9534f;color:#ffffff;font-size:9px;font-weight:bold;padding:1px 4px;border-radius:2px;margin:0 1px;line-height:12px;}
+    .nav-btn .fa-caret-down{font-size:9px;color:#aaa;margin-left:2px;}
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar{position:fixed;top:32px;left:0;width:82px;bottom:0;background:#444444;display:flex;flex-direction:column;z-index:999;overflow-y:auto;overflow-x:hidden;}
+    .sidebar-item{width:100%;height:35px;display:flex;align-items:center;padding:0 4px 0 6px;color:#cccccc;font-size:9.5px;font-family:Arial,Helvetica,sans-serif;letter-spacing:-0.1px;cursor:pointer;border-bottom:1px solid #363636;gap:5px;text-decoration:none;white-space:nowrap;background:#444444;}
+    .sidebar-item:hover{background:#383838;color:#fff;}
+    .sidebar-item i{font-size:11px;width:12px;text-align:center;color:#cccccc;flex-shrink:0;}
+    .sidebar-item span{line-height:1;}
+
+    /* ===== MAIN CONTENT WRAPPER ===== */
+    #content{
+      margin-left:82px;
+      margin-top:32px;
+      background:#ffffff;
+      min-height:640px;
+      border-bottom-left-radius:8px;
+      box-shadow:0 0 5px rgba(0,0,0,0.15);
+      position:relative;
+    }
+
+    /* ===== BREADCRUMB BAR (FULL-WIDTH) ===== */
+    .breadcrumb-bar{
+      background:#ededed;
+      border-bottom:1px solid #d4d4d4;
+      border-top:1px solid #dcdcdc;
+      height:36px;
+      padding:0 15px;
+      font-size:11px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .breadcrumb-bar a{
+      color:#337ab7;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      font-size:11px;
+    }
+    .breadcrumb-bar a:hover{text-decoration:underline;}
+    .breadcrumb-bar .separator{color:#888;font-size:10px;margin:0 2px;}
+    .breadcrumb-bar .current-page{color:#444;font-size:11px;}
+
+    /* Content inner container */
+    .content-inner{
+      padding:15px 20px 25px 20px;
+    }
+
+    /* ===== WIDGET CONTAINER ===== */
+    .widget-box{
+      background:#fff;
+      border:1px solid #cdcdcd;
+      border-radius:2px;
+      box-shadow:none;
+    }
+    .widget-header{
+      background:linear-gradient(to bottom, #fdfdfd 0%, #ebebeb 100%);
+      border-bottom:1px solid #cdcdcd;
+      height:36px;
+      padding:0 10px 0 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .widget-title{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-size:12px;
+      font-weight:700;
+      color:#444444;
+    }
+    .widget-title i{
+      font-size:13px;
+      color:#555;
+    }
+    .btn-add-request{
+      background:#ffffff;
+      border:1px solid #c4c4c4;
+      border-radius:3px;
+      font-size:11px;
+      font-weight:bold;
+      color:#333333;
+      padding:3px 9px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      box-shadow:0 1px 1px rgba(0,0,0,0.06);
+      line-height:1.4;
+      text-decoration:none;
+    }
+    .btn-add-request:hover{
+      background:#f8f8f8;
+      border-color:#b0b0b0;
+    }
+
+    /* ===== ADD REQUEST FORM BOX ===== */
+    .add-request-section{
+      border-bottom:1px solid #cdcdcd;
+      background:#ffffff;
+      transition:all 0.25s ease;
+    }
+    .sub-header{
+      background:linear-gradient(to bottom, #fbfbfb 0%, #ebebeb 100%);
+      border-top:1px solid #dcdcdc;
+      border-bottom:1px solid #dcdcdc;
+      height:34px;
+      padding:0 12px;
+      display:flex;
+      align-items:center;
+      gap:7px;
+      font-size:12px;
+      font-weight:700;
+      color:#444444;
+    }
+    .form-body{
+      padding:12px 16px 18px 16px;
+      background:#ffffff;
+    }
+    .required-note{
+      font-size:11px;
+      color:#444444;
+      margin-bottom:14px;
+    }
+    .form-grid{
+      display:flex;
+      gap:28px;
+      align-items:flex-start;
+      margin-bottom:14px;
+      flex-wrap:wrap;
+    }
+    .form-col{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .form-group{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .form-label{
+      width:92px;
+      text-align:right;
+      font-size:11.5px;
+      color:#333333;
+      flex-shrink:0;
+    }
+    .form-control{
+      width:150px;
+      height:26px;
+      border:1px solid #cccccc;
+      border-radius:3px;
+      padding:2px 6px;
+      font-size:11.5px;
+      color:#333333;
+      outline:none;
+      background:#ffffff;
+      box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+    }
+    .form-control:focus{
+      border-color:#66afe9;
+      box-shadow:inset 0 1px 1px rgba(0,0,0,0.075),0 0 6px rgba(102,175,233,0.6);
+    }
+    .form-control-textarea{
+      width:150px;
+      height:54px;
+      border:1px solid #cccccc;
+      border-radius:3px;
+      padding:4px 6px;
+      font-size:11.5px;
+      color:#333333;
+      outline:none;
+      background:#ffffff;
+      box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+      resize:vertical;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+    .form-control-textarea:focus{
+      border-color:#66afe9;
+      box-shadow:inset 0 1px 1px rgba(0,0,0,0.075),0 0 6px rgba(102,175,233,0.6);
+    }
+    .file-input-wrapper{
+      display:flex;
+      flex-direction:column;
+    }
+    .file-input{
+      font-size:11px;
+      color:#333;
+    }
+    .file-help{
+      font-size:9.5px;
+      color:#777777;
+      margin-top:4px;
+      line-height:1.2;
+      width:150px;
+    }
+    .form-actions{
+      margin-left:100px;
+    }
+    .btn-apply-request{
+      background:linear-gradient(to bottom, #0088cc 0%, #0066a2 100%);
+      border:1px solid #005580;
+      border-radius:3px;
+      color:#ffffff;
+      font-size:11.5px;
+      font-weight:bold;
+      padding:4px 12px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 1px 2px rgba(0,0,0,0.1);
+    }
+    .btn-apply-request:hover{
+      background:linear-gradient(to bottom, #0077b3 0%, #005588 100%);
+    }
+
+    /* ===== JQUERY UI DATE/TIME PICKER EXACT REPLICA ===== */
+    #ui-datepicker-div{
+      position:absolute;
+      z-index:99999;
+      width:226px;
+      background:#ffffff;
+      border:1px solid #aaaaaa;
+      border-radius:4px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.22);
+      font-family:Arial,Helvetica,sans-serif;
+      font-size:11px;
+      padding:4px;
+      display:none;
+    }
+    .dp-header{
+      background:#e6e6e6;
+      border:1px solid #d3d3d3;
+      border-radius:3px;
+      height:26px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 5px;
+      margin-bottom:4px;
+    }
+    .dp-arrow{
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:#222;
+      color:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:8px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .dp-arrow:hover{
+      background:#444;
+    }
+    .dp-title{
+      font-weight:bold;
+      font-size:11.5px;
+      color:#222222;
+    }
+    .dp-calendar{
+      width:100%;
+      border-collapse:collapse;
+      font-size:11px;
+      margin-bottom:6px;
+    }
+    .dp-calendar th{
+      padding:2px 0;
+      text-align:center;
+      color:#333;
+      font-weight:bold;
+      font-size:10.5px;
+    }
+    .dp-calendar td{
+      padding:1px;
+      text-align:center;
+    }
+    .dp-day{
+      display:block;
+      width:100%;
+      height:20px;
+      line-height:19px;
+      border:1px solid #dcdcdc;
+      background:#f4f4f4;
+      color:#333;
+      text-decoration:none;
+      cursor:pointer;
+      font-size:10.5px;
+      border-radius:2px;
+    }
+    .dp-day:hover{
+      background:#e8e8e8;
+      border-color:#b5b5b5;
+    }
+    .dp-day.dp-today{
+      background:#fffeb5;
+      border:1px solid #fad52e;
+      color:#333;
+      font-weight:bold;
+    }
+    .dp-day.dp-selected{
+      background:#0088cc;
+      border-color:#006699;
+      color:#fff;
+      font-weight:bold;
+    }
+    .dp-empty{
+      display:block;
+      height:20px;
+    }
+    .dp-timepicker{
+      border-top:1px solid #dcdcdc;
+      padding:6px 4px 4px 4px;
+      font-size:11px;
+    }
+    .dp-time-display{
+      margin-bottom:6px;
+      display:flex;
+      gap:15px;
+      font-size:11px;
+      color:#222;
+    }
+    .dp-time-display strong{
+      font-weight:bold;
+    }
+    .dp-slider-row{
+      display:flex;
+      align-items:center;
+      margin-bottom:5px;
+      font-size:10.5px;
+      color:#333;
+    }
+    .dp-slider-label{
+      width:46px;
+      flex-shrink:0;
+    }
+    .dp-slider{
+      flex:1;
+      height:6px;
+      -webkit-appearance:none;
+      appearance:none;
+      background:#dcdcdc;
+      border-radius:3px;
+      outline:none;
+    }
+    .dp-slider::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      appearance:none;
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      background:#f6f6f6;
+      border:1px solid #ababab;
+      cursor:pointer;
+      box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    }
+    .dp-btn-row{
+      border-top:1px solid #dcdcdc;
+      padding:6px 2px 2px 2px;
+      display:flex;
+      justify-content:space-between;
+    }
+    .dp-btn{
+      background:#f6f6f6;
+      border:1px solid #cccccc;
+      border-radius:3px;
+      font-size:10.5px;
+      padding:2px 10px;
+      color:#333;
+      cursor:pointer;
+    }
+    .dp-btn:hover{
+      background:#eaeaea;
+    }
+    .dp-btn-done{
+      font-weight:bold;
+    }
+
+    /* ===== WIDGET CONTENT ===== */
+    .widget-content{
+      padding:10px 10px 18px 10px;
+      background:#fff;
+    }
+    .result-summary{
+      text-align:right;
+      font-size:11px;
+      color:#333333;
+      margin-bottom:6px;
+    }
+
+    /* ===== DATA TABLE ===== */
+    .table-container{
+      width:100%;
+      overflow-x:auto;
+    }
+    .data-table{
+      width:100%;
+      border-collapse:collapse;
+      border:1px solid #ddd;
+      font-size:11.5px;
+    }
+    .data-table th{
+      background:#fafafa;
+      border:1px solid #ddd;
+      padding:6px 8px;
+      text-align:left;
+      font-weight:600;
+      white-space:nowrap;
+    }
+    .data-table th a{
+      color:#0088cc;
+      text-decoration:none;
+    }
+    .data-table th a:hover{
+      text-decoration:underline;
+    }
+    .data-table th.non-sortable{
+      color:#333333;
+    }
+    .data-table td{
+      border:1px solid #ddd;
+      padding:6px 8px;
+      font-size:11.5px;
+      color:#333333;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+    .data-table tr.filters td{
+      padding:4px 6px;
+      background:#ffffff;
+    }
+    .filter-input{
+      width:100%;
+      height:22px;
+      border:1px solid #cccccc;
+      border-radius:2px;
+      padding:2px 4px;
+      font-size:11px;
+      outline:none;
+      box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+    }
+    .filter-input:focus{
+      border-color:#66afe9;
+    }
+    .filter-select{
+      width:100%;
+      height:22px;
+      border:1px solid #cccccc;
+      border-radius:2px;
+      font-size:11px;
+      outline:none;
+      background:#fff;
+      padding:0 2px;
+    }
+    .filter-select:focus{
+      border-color:#66afe9;
+    }
+    .data-row:hover{
+      background-color:#f9f9f9;
+    }
+    .action-delete{
+      color:#0088cc;
+      text-decoration:none;
+      font-size:11px;
+      cursor:pointer;
+    }
+    .action-delete:hover{
+      text-decoration:underline;
+    }
+
+    /* Action buttons in Gate Pass table matching Image 1 */
+    .action-btn-group{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      align-items:center;
+    }
+    .btn-pass-download{
+      background:#2ea2d6;
+      border:1px solid #2890be;
+      border-radius:2px;
+      color:#ffffff;
+      font-size:10.5px;
+      font-weight:600;
+      padding:2px 8px;
+      width:104px;
+      text-align:center;
+      cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 1px rgba(0,0,0,0.1);
+      line-height:1.4;
+      white-space:nowrap;
+    }
+    .btn-pass-download:hover{
+      background:#2692c2;
+    }
+    .btn-pass-exit{
+      background:#d9534f;
+      border:1px solid #d43f3a;
+      border-radius:2px;
+      color:#ffffff;
+      font-size:10.5px;
+      font-weight:600;
+      padding:2px 8px;
+      width:104px;
+      text-align:center;
+      cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 1px rgba(0,0,0,0.1);
+      line-height:1.4;
+      white-space:nowrap;
+    }
+    .btn-pass-exit:hover{
+      background:#c9302c;
+    }
+    .btn-pass-view{
+      background:#337ab7;
+      border:1px solid #2e6da4;
+      border-radius:2px;
+      color:#ffffff;
+      font-size:10.5px;
+      font-weight:600;
+      padding:2px 8px;
+      width:104px;
+      text-align:center;
+      cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 1px rgba(0,0,0,0.1);
+      line-height:1.4;
+      white-space:nowrap;
+    }
+    .btn-pass-view:hover{
+      background:#286090;
+    }
+
+    /* ===== INLINE VIEW DETAILS SECTION (same page expandable view) ===== */
+    .view-details-section{
+      border-bottom:1px solid #cdcdcd;
+      background:#ffffff;
+      transition:all 0.25s ease;
+      animation:slideDown 0.2s ease-out;
+    }
+    @keyframes slideDown{
+      from{opacity:0;transform:translateY(-8px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    .modal-hdr{
+      background:linear-gradient(to bottom, #fbfbfb 0%, #ebebeb 100%);
+      border-top:1px solid #dcdcdc;
+      border-bottom:1px solid #d2d6de;
+      padding:8px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .modal-hdr-left{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      font-weight:700;
+      color:#444444;
+    }
+    .modal-hdr-icon{
+      background:#555555;
+      color:#ffffff;
+      font-weight:900;
+      font-size:11px;
+      width:18px;
+      height:18px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:2px;
+    }
+    .modal-hdr-close{
+      background:none;
+      border:none;
+      font-size:18px;
+      color:#777;
+      cursor:pointer;
+      line-height:1;
+      padding:0 4px;
+    }
+    .modal-hdr-close:hover{
+      color:#000;
+    }
+    .modal-bdy{
+      padding:18px 24px 22px 24px;
+      background:#ffffff;
+      max-width:840px;
+      margin:0 auto;
+    }
+    .gatepass-heading{
+      text-align:center;
+      font-size:14px;
+      font-weight:700;
+      color:#333333;
+      letter-spacing:0.5px;
+      margin-bottom:14px;
+    }
+    .gatepass-profile-center{
+      display:flex;
+      justify-content:center;
+      margin-bottom:18px;
+    }
+    .gatepass-profile-box{
+      width:110px;
+      height:110px;
+      border:1px solid #cfcfcf;
+      border-radius:2px;
+      box-shadow:0 1px 3px rgba(0,0,0,0.12);
+      object-fit:cover;
+      background:#f8f8f8;
+      display:block;
+    }
+    .gatepass-tables-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    .gatepass-info-table{
+      width:100%;
+      border-collapse:collapse;
+      border:1px solid #e0e0e0;
+      font-size:11.5px;
+    }
+    .gatepass-info-table tr{
+      border-bottom:1px solid #e0e0e0;
+    }
+    .gatepass-info-table tr:last-child{
+      border-bottom:none;
+    }
+    .gp-lbl{
+      width:40%;
+      text-align:right;
+      padding:7px 10px;
+      background:#f7f7f7;
+      color:#444444;
+      font-weight:700;
+      border-right:1px solid #e0e0e0;
+      white-space:nowrap;
+      vertical-align:top;
+    }
+    .gp-val{
+      padding:7px 10px;
+      background:#ffffff;
+      color:#333333;
+      vertical-align:top;
+      line-height:1.35;
+    }
+
+    /* ===== FOOTER ===== */
+    .page-footer-dark{
+      margin-left:82px;
+      padding:22px 24px 20px 24px;
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:35px;
+      color:#a8a8a8;
+      font-size:11px;
+    }
+    .page-footer-dark span{
+      letter-spacing:0.2px;
+    }
+
+    /* Assistant bubble icon */
+    .assist-bubble{
+      position:fixed;
+      bottom:12px;
+      right:12px;
+      width:32px;
+      height:32px;
+      border-radius:50%;
+      background:radial-gradient(circle at 30% 30%, #a270f5, #673ab7 70%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 2px 6px rgba(0,0,0,0.35);
+      cursor:pointer;
+      z-index:100;
+    }
+    .assist-bubble svg{
+      width:18px;
+      height:18px;
+      fill:#ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="topnav-left">
+    <a href="dashboard.html"><img src="etlab_logo.png" alt="etlab" class="topnav-logo"/></a>
+    <span class="topnav-title">CHRIST COLLEGE OF ENGINEERING (AUTONOMOUS)</span>
+  </div>
+  <div class="topnav-right">
+    <a href="#" class="nav-btn"><i class="fa fa-user"></i> <span>user</span> <i class="fa fa-caret-down"></i></a>
+    <a href="#" class="nav-btn"><i class="fa fa-envelope"></i> <span>Messages</span> <span class="nav-badge-red">0</span> <i class="fa fa-caret-down"></i></a>
+    <a href="login.html" class="nav-btn"><i class="fa fa-share" style="transform:scaleX(-1);"></i> <span>Logout</span></a>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <a class="sidebar-item" href="dashboard.html">
+    <i class="fa fa-home"></i>
+    <span>Dashboard</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-bars"></i>
+    <span>Attendance</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-pencil-square-o"></i>
+    <span>Results</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th-large"></i>
+    <span>TimeTable</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>Assignments</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>Materials</span>
+  </a>
+  <a class="sidebar-item" href="#">
+    <i class="fa fa-th"></i>
+    <span>User Manual</span>
+  </a>
+</div>
+
+<!-- CONTENT WRAPPER -->
+<div id="content">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb-bar">
+    <a href="dashboard.html"><i class="fa fa-home"></i> Home</a>
+    <span class="separator">&gt;</span>
+    <span class="current-page">Gate Pass Request</span>
+  </div>
+
+  <div class="content-inner">
+    <!-- Widget Box -->
+    <div class="widget-box">
+      <div class="widget-header">
+        <div class="widget-title">
+          <i class="fa fa-file" style="font-size:12px;color:#555;"></i>
+          <span>View Gatepass Request</span>
+        </div>
+        <a href="javascript:void(0);" class="btn-add-request" id="btnAddRequest" onclick="toggleAddRequestForm()">
+          <strong style="font-size:13px;line-height:1;">+</strong> Add Request
+        </a>
+      </div>
+
+      <!-- ADD REQUEST FORM (Collapsible) -->
+      <div id="addRequestSection" class="add-request-section" style="display:none;">
+        <div class="sub-header">
+          <i class="fa fa-file" style="font-size:12px;color:#555;"></i>
+          <span>Gate Pass Request</span>
+        </div>
+        <div class="form-body">
+          <div class="required-note">Fields with <span style="color:#d9534f;font-weight:bold;">*</span> are required.</div>
+
+          <form id="gatepassForm" onsubmit="handleApplyRequest(event)">
+            <div class="form-grid">
+              <!-- Column 1 -->
+              <div class="form-col">
+                <div class="form-group">
+                  <label class="form-label">User</label>
+                  <select class="form-control" style="background:#f9f9f9;cursor:not-allowed;" disabled>
+                    <option selected>Student</option>
+                  </select>
+                </div>
+                <div class="form-group" style="align-items:flex-start;">
+                  <label class="form-label" style="padding-top:4px;">Purpose <span style="color:#d9534f;">*</span></label>
+                  <textarea class="form-control-textarea" id="formPurpose" rows="3" required></textarea>
+                </div>
+                <div class="form-group" style="align-items:flex-start;">
+                  <label class="form-label" style="padding-top:4px;">Attachment</label>
+                  <div class="file-input-wrapper">
+                    <input type="file" id="formAttachment" class="file-input"/>
+                    <span class="file-help">Allowed: JPG, JPEG, PNG, PDF (Max 200KB)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Column 2 -->
+              <div class="form-col">
+                <div class="form-group">
+                  <label class="form-label">Purpose Type</label>
+                  <select class="form-control" id="formPurposeType">
+                    <option value="">Select</option>
+                    <option value="Other">Other</option>
+                    <option value="Official">Official</option>
+                    <option value="Personal">Personal</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Exit Type</label>
+                  <select class="form-control" id="formExitType">
+                    <option value="">Select</option>
+                    <option value="Return">Return</option>
+                    <option value="Non Return">Non Return</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Name <span style="color:#d9534f;">*</span></label>
+                  <input type="text" class="form-control" id="formName" value="user" placeholder="Full Name" required/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size:10px;line-height:1.2;">Admission / Staff ID</label>
+                  <input type="text" class="form-control" id="formAdmNo" placeholder="e.g. CCE22CS042"/>
+                </div>
+              </div>
+
+              <!-- Column 3 -->
+              <div class="form-col">
+                <div class="form-group" style="position:relative;">
+                  <label class="form-label">From Time <span style="color:#d9534f;">*</span></label>
+                  <input type="text" class="form-control" id="formFromTime" placeholder="" autocomplete="off" readonly style="cursor:pointer;background:#fff;" onclick="openDateTimePicker(event, this)" required/>
+                </div>
+                <div class="form-group" style="position:relative;">
+                  <label class="form-label">Return Time</label>
+                  <input type="text" class="form-control" id="formReturnTime" placeholder="" autocomplete="off" readonly style="cursor:pointer;background:#fff;" onclick="openDateTimePicker(event, this)"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone No</label>
+                  <input type="text" class="form-control" id="formPhone" placeholder="Enter Phone No"/>
+                </div>
+                <div class="form-group" style="align-items:flex-start;">
+                  <label class="form-label" style="padding-top:4px;font-size:11px;">Upload Profile</label>
+                  <div class="file-input-wrapper">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <input type="file" id="formProfile" class="file-input" accept="image/*" onchange="previewProfilePic(event)" style="width:115px;"/>
+                      <img id="profilePreviewImg" src="" alt="preview" style="display:none;width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #ccc;"/>
+                    </div>
+                    <span class="file-help">JPG, PNG (Max 500KB)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-apply-request">
+                <i class="fa fa-check"></i> Apply Request
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- INLINE VIEW DETAILS SECTION (expands on the same page like Add Request) -->
+      <div class="view-details-section" id="viewDetailsSection" style="display:none;">
+        <div class="modal-hdr">
+          <div class="modal-hdr-left">
+            <span class="modal-hdr-icon">A</span>
+            <span>View Details</span>
+          </div>
+          <button type="button" class="modal-hdr-close" onclick="closeGatePassModal()">&times;</button>
+        </div>
+        <div class="modal-bdy">
+          <div class="gatepass-heading">GATE PASS</div>
+
+          <div class="gatepass-profile-center">
+            <img id="modalProfileImg" src="student_profile.jpg" alt="Profile" class="gatepass-profile-box" onerror="this.onerror=null;this.src='student_profile.jpg';"/>
+          </div>
+
+          <div class="gatepass-tables-grid">
+            <!-- Left Table -->
+            <table class="gatepass-info-table">
+              <tbody>
+                <tr>
+                  <td class="gp-lbl">Name</td>
+                  <td class="gp-val" id="modalName">user</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Address</td>
+                  <td class="gp-val" id="modalAddress">Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Purpose Type</td>
+                  <td class="gp-val" id="modalPurposeType">Official</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Gate Pass Date</td>
+                  <td class="gp-val" id="modalDate">2026-10-09 11:00:00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Right Table -->
+            <table class="gatepass-info-table">
+              <tbody>
+                <tr>
+                  <td class="gp-lbl">Admission No/Staff ID</td>
+                  <td class="gp-val" id="modalAdmNo">2960</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Description</td>
+                  <td class="gp-val" id="modalDescription">Outreach</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Phone</td>
+                  <td class="gp-val" id="modalPhone">1234567890</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Exit Type</td>
+                  <td class="gp-val" id="modalExitType">Return</td>
+                </tr>
+                <tr>
+                  <td class="gp-lbl">Attachment</td>
+                  <td class="gp-val" id="modalAttachment">Not Attached</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    <div class="widget-content">
+      <div class="result-summary">Displaying 1-1 of 1 result.</div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="min-width:130px;"><a href="#">Purpose</a></th>
+              <th style="min-width:110px;"><a href="#">Type</a></th>
+              <th class="non-sortable" style="min-width:125px;">Date</th>
+              <th class="non-sortable" style="min-width:125px;">Return Date</th>
+              <th style="min-width:110px;"><a href="#">Status</a></th>
+              <th style="min-width:110px;"><a href="#">Exit Type</a></th>
+              <th style="min-width:110px;"><a href="#">Phone</a></th>
+              <th style="min-width:110px;"><a href="#">Mail</a></th>
+              <th style="min-width:110px;"><a href="#">Attachment</a></th>
+              <th style="min-width:125px;"></th>
+            </tr>
+            <tr class="filters">
+              <td><input type="text" class="filter-input"/></td>
+              <td>
+                <select class="filter-select">
+                  <option value=""></option>
+                  <option value="Other">Other</option>
+                  <option value="Official">Official</option>
+                  <option value="Personal">Personal</option>
+                </select>
+              </td>
+              <td></td>
+              <td></td>
+              <td>
+                <select class="filter-select">
+                  <option value=""></option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </td>
+              <td>
+                <select class="filter-select">
+                  <option value=""></option>
+                  <option value="Return">Return</option>
+                  <option value="Non Return">Non Return</option>
+                </select>
+              </td>
+              <td><input type="text" class="filter-input"/></td>
+              <td><input type="text" class="filter-input"/></td>
+              <td><input type="text" class="filter-input"/></td>
+              <td></td>
+            </tr>
+          </thead>
+          <tbody id="gatepassTableBody">
+            <tr class="data-row"
+                data-name="user"
+                data-address="Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur"
+                data-purpose-type="Official"
+                data-date="2026-10-09 11:00:00"
+                data-return-date="2026-10-09 14:00:00"
+                data-adm-no="2960"
+                data-description="Outreach"
+                data-phone="1234567890"
+                data-exit-type="Return"
+                data-attachment="Not Attached"
+                data-profile-img="student_profile.jpg">
+              <td>Outreach</td>
+              <td>Official</td>
+              <td>2026-10-09 11:00:00</td>
+              <td>2026-10-09 14:00:00</td>
+              <td>Approved</td>
+              <td>Return</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>
+                <div class="action-btn-group">
+                  <button type="button" class="btn-pass-download" onclick="handleDownloadPass(this)">Download Pass</button>
+                  <button type="button" class="btn-pass-exit" onclick="handleExit(this)">Exit</button>
+                  <button type="button" class="btn-pass-view" onclick="openGatePassModal(this)">View</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  </div><!-- end content-inner -->
+</div><!-- end content -->
+
+<!-- FOOTER -->
+<div class="page-footer-dark">
+  <span>Page Generated in 0.06766 seconds</span>
+  <span>&copy; 2026 Etuwa Concepts, All rights reserved.</span>
+</div>
+
+<!-- Floating assist bubble -->
+<div class="assist-bubble" title="Support">
+  <svg viewBox="0 0 24 24">
+    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.08L2.1 21.9l4.98-1.24C8.52 21.49 10.2 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+  </svg>
+</div>
+
+<!-- JQUERY UI DATE/TIME PICKER CONTAINER -->
+<div id="ui-datepicker-div"></div>
+
+<script>
+  function toggleAddRequestForm() {
+    var formSec = document.getElementById('addRequestSection');
+    if (formSec.style.display === 'none' || formSec.style.display === '') {
+      formSec.style.display = 'block';
+      document.getElementById('formPurpose').focus();
+    } else {
+      formSec.style.display = 'none';
+      closeDatePicker();
+    }
+  }
+
+
+  function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function renderPermissionsTable(permissions) {
+    var tbody = document.getElementById('gatepassTableBody') || document.querySelector('.data-table tbody');
+    if (!tbody) return;
+
+    if (!permissions || permissions.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align:center;padding:16px;color:#777;">
+            No gate pass permissions found. Click <strong>+ Add Request</strong> to create one.
+          </td>
+        </tr>
+      `;
+      updateSummaryCount();
+      return;
+    }
+
+    var html = '';
+    permissions.forEach(function(item) {
+      var id = escapeHtml(item.id || '');
+      var name = escapeHtml(item.name || 'user');
+      var address = escapeHtml(item.address || 'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur');
+      var purposeType = escapeHtml(item.purposeType || 'Official');
+      var fromTime = escapeHtml(item.fromTime || item.date || '—');
+      var returnTime = escapeHtml(item.returnTime || item.returnDate || '—');
+      var admNo = escapeHtml(item.admNo || '2960');
+      var description = escapeHtml(item.purpose || item.description || 'Gate Pass');
+      var phone = escapeHtml(item.phone || '1234567890');
+      var exitType = escapeHtml(item.exitType || 'Return');
+      var status = escapeHtml(item.status || 'Approved');
+      var mail = escapeHtml(item.mail || '—');
+      var attachment = escapeHtml(item.attachment || 'Not Attached');
+      var profileImg = escapeHtml(item.profileImg || 'student_profile.jpg');
+
+      var hasAttachment = attachment === 'Attached';
+
+      html += `
+        <tr class="data-row"
+            data-id="${id}"
+            data-name="${name}"
+            data-address="${address}"
+            data-purpose-type="${purposeType}"
+            data-date="${fromTime}"
+            data-return-date="${returnTime}"
+            data-adm-no="${admNo}"
+            data-description="${description}"
+            data-phone="${phone}"
+            data-exit-type="${exitType}"
+            data-attachment="${attachment}"
+            data-profile-img="${profileImg}">
+          <td>${description}</td>
+          <td>${purposeType}</td>
+          <td>${fromTime}</td>
+          <td>${returnTime}</td>
+          <td>${status}</td>
+          <td>${exitType}</td>
+          <td>${phone && phone !== '1234567890' ? phone : '—'}</td>
+          <td>${mail}</td>
+          <td>${hasAttachment ? '<span title="Profile uploaded">&#128206;</span>' : '—'}</td>
+          <td>
+            <div class="action-btn-group">
+              <button type="button" class="btn-pass-download" onclick="handleDownloadPass(this)">Download Pass</button>
+              <button type="button" class="btn-pass-exit" onclick="handleExit(this)">Exit</button>
+              <button type="button" class="btn-pass-view" onclick="openGatePassModal(this)">View</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+    updateSummaryCount();
+  }
+
+  var currentUploadedImgCache = '';
+
+  async function handleApplyRequest(e) {
+    e.preventDefault();
+    var submitBtn = document.querySelector('.btn-apply-request');
+    var originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving to Backend...';
+    }
+
+    var purpose = document.getElementById('formPurpose').value.trim() || 'Outreach';
+    var purposeType = document.getElementById('formPurposeType').value || 'Official';
+    var exitType = document.getElementById('formExitType').value || 'Return';
+    var fromTime = document.getElementById('formFromTime').value.trim() || '2026-10-09 11:00:00';
+    var returnTime = document.getElementById('formReturnTime').value.trim() || '2026-10-09 14:00:00';
+    var name = document.getElementById('formName').value.trim() || 'user';
+    var admNo = document.getElementById('formAdmNo').value.trim() || '2960';
+    var phone = document.getElementById('formPhone').value.trim() || '1234567890';
+    var profilePreview = document.getElementById('profilePreviewImg');
+    var hasProfilePic = !!(currentUploadedImgCache || (profilePreview && profilePreview.style.display !== 'none' && profilePreview.src));
+    var address = 'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur';
+
+    var permId = 'gp_' + Date.now();
+
+    // Cache the uploaded image in local storage
+    if (currentUploadedImgCache) {
+      try {
+        localStorage.setItem('etlab_cached_avatar_' + permId, currentUploadedImgCache);
+        localStorage.setItem('etlab_latest_cached_avatar', currentUploadedImgCache);
+      } catch (storageErr) {
+        console.warn("Storage quota limit reached for local image cache:", storageErr);
+      }
+    }
+
+    var permissionData = {
+      id: permId,
+      purpose: purpose,
+      purposeType: purposeType,
+      exitType: exitType,
+      fromTime: fromTime,
+      returnTime: returnTime,
+      name: name,
+      admNo: admNo,
+      phone: phone,
+      address: address,
+      status: 'Approved',
+      mail: '—',
+      attachment: hasProfilePic ? 'Attached' : 'Not Attached',
+      profileImg: 'student_profile.jpg'
+    };
+
+    try {
+      // Store in Firebase backend (strictly keeping last 5 records)
+      var updatedLast5 = await storeLast5Permissions(permissionData);
+      renderPermissionsTable(updatedLast5);
+    } catch (err) {
+      console.error("Failed to store permission:", err);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+    }
+
+    // Reset and hide form
+    document.getElementById('gatepassForm').reset();
+    currentUploadedImgCache = '';
+    if (profilePreview) {
+      profilePreview.src = '';
+      profilePreview.style.display = 'none';
+    }
+    document.getElementById('addRequestSection').style.display = 'none';
+    closeDatePicker();
+  }
+
+  function openGatePassModal(btn) {
+    var row = btn.closest('tr');
+    var id = row.getAttribute('data-id') || '';
+    var name = row.getAttribute('data-name') || 'user';
+    var address = row.getAttribute('data-address') || 'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur';
+    var purposeType = row.getAttribute('data-purpose-type') || 'Official';
+    var date = row.getAttribute('data-date') || '2026-10-09 11:00:00';
+    var admNo = row.getAttribute('data-adm-no') || '2960';
+    var description = row.getAttribute('data-description') || 'Outreach';
+    var phone = row.getAttribute('data-phone') || '1234567890';
+    var exitType = row.getAttribute('data-exit-type') || 'Return';
+    var attachment = row.getAttribute('data-attachment') || 'Not Attached';
+
+    // Retrieve uploaded image from local cache, or fallback to default photo
+    var cachedAvatar = null;
+    if (id) {
+      cachedAvatar = localStorage.getItem('etlab_cached_avatar_' + id);
+    }
+    if (!cachedAvatar && attachment === 'Attached') {
+      cachedAvatar = localStorage.getItem('etlab_latest_cached_avatar');
+    }
+    var profileImg = cachedAvatar || 'student_profile.jpg';
+
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalAddress').textContent = address;
+    document.getElementById('modalPurposeType').textContent = purposeType;
+    document.getElementById('modalDate').textContent = date;
+    document.getElementById('modalAdmNo').textContent = admNo;
+    document.getElementById('modalDescription').textContent = description;
+    document.getElementById('modalPhone').textContent = phone;
+    document.getElementById('modalExitType').textContent = exitType;
+    document.getElementById('modalAttachment').textContent = attachment;
+
+    var modalImg = document.getElementById('modalProfileImg');
+    if (modalImg) {
+      modalImg.onerror = function() {
+        this.onerror = null;
+        this.src = 'student_profile.jpg';
+      };
+      modalImg.src = profileImg;
+    }
+
+    var viewSec = document.getElementById('viewDetailsSection');
+    viewSec.style.display = 'block';
+    viewSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function closeGatePassModal() {
+    var viewSec = document.getElementById('viewDetailsSection');
+    if (viewSec) {
+      viewSec.style.display = 'none';
+    }
+  }
+
+  function handleDownloadPass(btn) {
+    alert('Gate Pass downloaded successfully.');
+  }
+
+  function handleExit(btn) {
+    var row = btn.closest('tr');
+    var purpose = row.getAttribute('data-description') || 'Gate Pass';
+    alert('Student exit recorded for "' + purpose + '" at ' + new Date().toLocaleTimeString());
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeGatePassModal();
+    }
+  });
+
+  function previewProfilePic(e) {
+    var file = e.target.files[0];
+    var img = document.getElementById('profilePreviewImg');
+    if (!file) {
+      currentUploadedImgCache = '';
+      if (img) { img.src = ''; img.style.display = 'none'; }
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      // Compress with canvas to prevent memory & storage bloat
+      var tempImg = new Image();
+      tempImg.onload = function() {
+        var canvas = document.createElement('canvas');
+        var maxDim = 320;
+        var w = tempImg.width;
+        var h = tempImg.height;
+        if (w > h) {
+          if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        } else {
+          if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(tempImg, 0, 0, w, h);
+        currentUploadedImgCache = canvas.toDataURL('image/jpeg', 0.85);
+
+        if (img) {
+          img.src = currentUploadedImgCache;
+          img.style.display = 'block';
+        }
+      };
+      tempImg.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updateSummaryCount() {
+    var count = document.querySelectorAll('.data-table tbody tr.data-row').length;
+    var summary = document.querySelector('.result-summary');
+    if (summary) {
+      summary.textContent = `Displaying 1-${count} of ${count} result${count > 1 ? 's' : ''}.`;
+    }
+  }
+
+  // Load and synchronize last 5 permissions on startup
+  window.addEventListener('DOMContentLoaded', async function() {
+    // 1. Fetch and render last 5 permissions
+    try {
+      var permissions = await getLast5Permissions();
+      renderPermissionsTable(permissions);
+    } catch (err) {
+      console.error("Error loading permissions:", err);
+    }
+
+    // 2. Setup real-time listener if Firebase is live
+    listenToLast5Permissions(function(livePermissions) {
+      if (livePermissions && livePermissions.length > 0) {
+        renderPermissionsTable(livePermissions);
+      }
+    });
+  });
+
+  /* ===== EXACT JQUERY UI DATE / TIME PICKER ENGINE ===== */
+  var activePickerInput = null;
+  var dpCurrentYear = 2026;
+  var dpCurrentMonth = 9; // October (0-indexed)
+  var dpSelectedDay = 13;
+  var dpSelectedHour = 0;
+  var dpSelectedMinute = 0;
+
+  var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  function openDateTimePicker(e, inputEl) {
+    e.stopPropagation();
+    activePickerInput = inputEl;
+
+    if (inputEl.value) {
+      var parts = inputEl.value.trim().split(' ');
+      if (parts[0]) {
+        var dParts = parts[0].split('-');
+        if (dParts.length === 3) {
+          dpCurrentYear = parseInt(dParts[0], 10);
+          dpCurrentMonth = parseInt(dParts[1], 10) - 1;
+          dpSelectedDay = parseInt(dParts[2], 10);
+        }
+      }
+      if (parts[1]) {
+        var tParts = parts[1].split(':');
+        if (tParts.length >= 2) {
+          dpSelectedHour = parseInt(tParts[0], 10);
+          dpSelectedMinute = parseInt(tParts[1], 10);
+        }
+      }
+    } else {
+      dpCurrentYear = 2026;
+      dpCurrentMonth = 9;
+      dpSelectedDay = 13;
+      dpSelectedHour = 0;
+      dpSelectedMinute = 0;
+    }
+
+    renderDatePicker();
+
+    var picker = document.getElementById('ui-datepicker-div');
+    var rect = inputEl.getBoundingClientRect();
+    picker.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+    picker.style.left = (rect.left + window.scrollX) + 'px';
+    picker.style.display = 'block';
+  }
+
+  function renderDatePicker() {
+    var picker = document.getElementById('ui-datepicker-div');
+    var firstDayIndex = new Date(dpCurrentYear, dpCurrentMonth, 1).getDay();
+    var daysInMonth = new Date(dpCurrentYear, dpCurrentMonth + 1, 0).getDate();
+
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    var timeStr = pad(dpSelectedHour) + ':' + pad(dpSelectedMinute) + ':00';
+
+    var html = `
+      <div class="dp-header">
+        <span class="dp-arrow" onclick="navMonth(-1); event.stopPropagation();">&#9668;</span>
+        <span class="dp-title">${monthNames[dpCurrentMonth]} ${dpCurrentYear}</span>
+        <span class="dp-arrow" onclick="navMonth(1); event.stopPropagation();">&#9658;</span>
+      </div>
+      <table class="dp-calendar">
+        <thead>
+          <tr>
+            <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    var currentDay = 1;
+    for (var r = 0; r < 6; r++) {
+      html += '<tr>';
+      for (var c = 0; c < 7; c++) {
+        if (r === 0 && c < firstDayIndex) {
+          html += '<td><span class="dp-empty"></span></td>';
+        } else if (currentDay > daysInMonth) {
+          html += '<td><span class="dp-empty"></span></td>';
+        } else {
+          var isToday = (dpCurrentYear === 2026 && dpCurrentMonth === 9 && currentDay === 13);
+          var isSelected = (currentDay === dpSelectedDay);
+          var classes = 'dp-day';
+          if (isSelected) classes += ' dp-selected';
+          else if (isToday) classes += ' dp-today';
+
+          html += `<td><a class="${classes}" href="javascript:void(0);" onclick="selectDay(${currentDay}); event.stopPropagation();">${currentDay}</a></td>`;
+          currentDay++;
+        }
+      }
+      html += '</tr>';
+      if (currentDay > daysInMonth) break;
+    }
+
+    html += `
+        </tbody>
+      </table>
+      <div class="dp-timepicker">
+        <div class="dp-time-display">
+          <span>Time</span>
+          <strong id="dpTimeVal">${timeStr}</strong>
+        </div>
+        <div class="dp-slider-row">
+          <span class="dp-slider-label">Hour</span>
+          <input type="range" class="dp-slider" id="dpHourSlider" min="0" max="23" value="${dpSelectedHour}" oninput="updateTimeSlider(); event.stopPropagation();"/>
+        </div>
+        <div class="dp-slider-row">
+          <span class="dp-slider-label">Minute</span>
+          <input type="range" class="dp-slider" id="dpMinSlider" min="0" max="59" value="${dpSelectedMinute}" oninput="updateTimeSlider(); event.stopPropagation();"/>
+        </div>
+      </div>
+      <div class="dp-btn-row">
+        <button type="button" class="dp-btn" onclick="setNow(); event.stopPropagation();">Now</button>
+        <button type="button" class="dp-btn dp-btn-done" onclick="closeDatePicker(); event.stopPropagation();">Done</button>
+      </div>
+    `;
+
+    picker.innerHTML = html;
+  }
+
+  function navMonth(dir) {
+    dpCurrentMonth += dir;
+    if (dpCurrentMonth < 0) {
+      dpCurrentMonth = 11;
+      dpCurrentYear--;
+    } else if (dpCurrentMonth > 11) {
+      dpCurrentMonth = 0;
+      dpCurrentYear++;
+    }
+    renderDatePicker();
+  }
+
+  function selectDay(day) {
+    dpSelectedDay = day;
+    applyPickerValue();
+    renderDatePicker();
+  }
+
+  function updateTimeSlider() {
+    var h = parseInt(document.getElementById('dpHourSlider').value, 10);
+    var m = parseInt(document.getElementById('dpMinSlider').value, 10);
+    dpSelectedHour = h;
+    dpSelectedMinute = m;
+
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    var timeStr = pad(h) + ':' + pad(m) + ':00';
+    document.getElementById('dpTimeVal').textContent = timeStr;
+
+    applyPickerValue();
+  }
+
+  function setNow() {
+    var now = new Date();
+    dpCurrentYear = now.getFullYear();
+    dpCurrentMonth = now.getMonth();
+    dpSelectedDay = now.getDate();
+    dpSelectedHour = now.getHours();
+    dpSelectedMinute = now.getMinutes();
+
+    applyPickerValue();
+    renderDatePicker();
+  }
+
+  function applyPickerValue() {
+    if (!activePickerInput) return;
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    var dateStr = dpCurrentYear + '-' + pad(dpCurrentMonth + 1) + '-' + pad(dpSelectedDay);
+    var timeStr = pad(dpSelectedHour) + ':' + pad(dpSelectedMinute) + ':00';
+    activePickerInput.value = dateStr + ' ' + timeStr;
+  }
+
+  function closeDatePicker() {
+    var picker = document.getElementById('ui-datepicker-div');
+    if (picker) picker.style.display = 'none';
+    activePickerInput = null;
+  }
+
+  document.addEventListener('click', function(e) {
+    var picker = document.getElementById('ui-datepicker-div');
+    if (!picker || picker.style.display === 'none') return;
+    if (!picker.contains(e.target) && e.target !== activePickerInput) {
+      closeDatePicker();
+    }
+  });
+</script>
+</body>
+</html>
