@@ -1154,6 +1154,19 @@
     updateSummaryCount();
   }
 
+  // Real Addresses near Thrissur
+  var thrissurAddresses = [
+    'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur - 680566',
+    'Manjaly House, Main Road, Irinjalakuda, India, Kerala, Thrissur - 680121',
+    'Thekkekara House, Round South, Kuruppam Road, India, Kerala, Thrissur - 680001',
+    'Panakkal House, Ollur P O, India, Kerala, Thrissur - 680306'
+  ];
+
+  function getRandomThrissurAddress() {
+    var idx = Math.floor(Math.random() * thrissurAddresses.length);
+    return thrissurAddresses[idx];
+  }
+
   var currentUploadedImgCache = '';
 
   async function handleApplyRequest(e) {
@@ -1175,7 +1188,7 @@
     var phone = document.getElementById('formPhone').value.trim() || '1234567890';
     var profilePreview = document.getElementById('profilePreviewImg');
     var hasProfilePic = !!(currentUploadedImgCache || (profilePreview && profilePreview.style.display !== 'none' && profilePreview.src));
-    var address = 'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur';
+    var address = getRandomThrissurAddress();
 
     var permId = 'gp_' + Date.now();
 
@@ -1234,7 +1247,8 @@
     var row = btn.closest('tr');
     var id = row.getAttribute('data-id') || '';
     var name = row.getAttribute('data-name') || 'user';
-    var address = row.getAttribute('data-address') || 'Kalakoduvath House, Nattika P O, Thriprayar, India, Kerala, Thrissur';
+    var address = getRandomThrissurAddress();
+
     var purposeType = row.getAttribute('data-purpose-type') || 'Official';
     var date = row.getAttribute('data-date') || '2026-10-09 11:00:00';
     var admNo = row.getAttribute('data-adm-no') || '2960';
