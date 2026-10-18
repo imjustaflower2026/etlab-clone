@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ETLab - Dashboard</title>
   <link rel="icon" type="image/png" href="favicon.png"/>
+  <script src="auth-guard.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -261,7 +262,7 @@
   <div class="topnav-right">
     <a href="#" class="nav-btn"><i class="fa fa-user"></i> <span>user</span> <i class="fa fa-caret-down"></i></a>
     <a href="#" class="nav-btn"><i class="fa fa-envelope"></i> <span>Messages</span> <span class="nav-badge-red">0</span> <i class="fa fa-caret-down"></i></a>
-    <a href="login.html" class="nav-btn"><i class="fa fa-share" style="transform:scaleX(-1);"></i> <span>Logout</span></a>
+    <a href="login.html" class="nav-btn" onclick="etlabLogout(event)"><i class="fa fa-share" style="transform:scaleX(-1);"></i> <span>Logout</span></a>
   </div>
 </div>
 
